@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var sharp = require('sharp');
+var bodyParser = require('body-parser')
 
 var fs = require('fs');
 const { resolve } = require('path');
@@ -13,6 +14,14 @@ router.get('/scan', function(req, res, next) {
             res.send(err)
         })
 });
+
+router.post('/puzzle', function(req, res, next) {
+    console.log(req.body.name)
+})
+
+router.get('/puzzle-types', function(req, res, next) {
+
+})
 
 function readdirSyncIgnoreHiddenFiles(folder) {
     let toReturn = fs.readdirSync(folder)
