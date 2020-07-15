@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var sharp = require('sharp');
-var bodyParser = require('body-parser')
 
 var fs = require('fs');
 const { resolve } = require('path');
