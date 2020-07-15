@@ -14,12 +14,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   Puzzle.init({
-    id: DataTypes.INTEGER,
     name: DataTypes.STRING,
     price: DataTypes.DECIMAL,
     image: DataTypes.STRING,
     type: DataTypes.TINYINT,
-    url: DataTypes.STRING
+    url: {
+      type: DataTypes.STRING,
+      unique: true
+    }
   }, {
     sequelize,
     modelName: 'Puzzle',

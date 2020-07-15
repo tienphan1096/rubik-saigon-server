@@ -14,7 +14,6 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   PuzzleType.init({
-    id: DataTypes.INTEGER,
     name: DataTypes.STRING
   }, {
     sequelize,
