@@ -10,14 +10,14 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      Puzzle.belongsTo(models.PuzzleType, { foreignKey: 'type' })
     }
   };
   Puzzle.init({
     name: DataTypes.STRING,
     price: DataTypes.DECIMAL,
     image: DataTypes.STRING,
-    type: DataTypes.TINYINT,
+    type: DataTypes.INTEGER,
     url: {
       type: DataTypes.STRING,
       unique: true

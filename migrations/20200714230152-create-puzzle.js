@@ -18,7 +18,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       type: {
-        type: Sequelize.TINYINT
+        type: Sequelize.INTEGER
       },
       url: {
         type: Sequelize.STRING,
@@ -33,6 +33,20 @@ module.exports = {
         type: Sequelize.DATE
       }
     });
+
+    await queryInterface.addConstraint(
+      'Puzzles',
+      {
+        fields: ['type'],
+        type: 'foreign key',
+        references: {
+          table: 'PuzzleTypes',
+          field: 'id'
+        },
+        onDelete: 'cascade',
+        onUpdate: 'cascade'
+      }
+    )
   },
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('Puzzles');
