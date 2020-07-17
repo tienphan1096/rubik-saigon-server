@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var sharp = require('sharp');
 var { Puzzle, PuzzleType } = require('../models')
-var { Op } = require('sequelize')
+var { Op, json } = require('sequelize')
 
 var fs = require('fs');
 const { resolveNaptr } = require('dns');
@@ -16,6 +16,12 @@ router.get('/scan', function(req, res, next) {
             res.send(err)
         })
 });
+
+router.get('/puzzles', (req, res, next) => {
+    Puzzle.findAll().then(results => {
+        res.json(results)
+    })
+})
 
 router.post('/puzzle', async function(req, res, next) {
     Puzzle.create({
