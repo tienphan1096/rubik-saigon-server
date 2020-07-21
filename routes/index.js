@@ -2,11 +2,19 @@ var express = require('express');
 var router = express.Router();
 var sharp = require('sharp');
 var { Puzzle, PuzzleType } = require('../models')
-var { Op, json } = require('sequelize')
-
+var { Op } = require('sequelize')
 var fs = require('fs');
-const { resolveNaptr } = require('dns');
-const { url } = require('inspector');
+var multer  = require('multer')
+var storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './public/images/main/')
+    },
+    filename: (req, file, cb) => {
+        // TODO: check if filename already exists.
+        cb(null, file.originalname)
+    }
+})
+var upload = multer({ storage })
 
 router.get('/scan', function(req, res, next) {
     generateThumbnailsForAll()
@@ -19,15 +27,20 @@ router.get('/scan', function(req, res, next) {
 
 router.get('/puzzles', (req, res, next) => {
     Puzzle.findAll().then(results => {
+        results.forEach(puzzle => {
+            puzzle.setDataValue('thumbnail', `/images/thumbnails/${puzzle.image}`)
+        })
         res.json(results)
     })
 })
 
-router.post('/puzzle', async function(req, res, next) {
+router.post('/puzzle', upload.single('image'), async function(req, res, next) {
+    generateThumbnail(req.file.originalname)
     Puzzle.create({
         name: req.body.name,
         price: req.body.price,
         type: req.body.type,
+        image: req.file.originalname,
         url: await getUniqueUrlFromText(req.body.name)
     }).then(result => {
         res.json(result)
