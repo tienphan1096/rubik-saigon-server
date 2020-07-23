@@ -1,11 +1,12 @@
-var express = require('express');
-var router = express.Router();
-var sharp = require('sharp');
-var { Puzzle, PuzzleType } = require('../models')
-var { Op } = require('sequelize')
-var fs = require('fs');
-var multer  = require('multer')
-var storage = multer.diskStorage({
+const bcrypt = require('bcrypt');
+const express = require('express');
+const router = express.Router();
+const sharp = require('sharp');
+const { Puzzle, PuzzleType, User } = require('../models')
+const { Op } = require('sequelize')
+const fs = require('fs');
+const multer  = require('multer')
+const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, './public/images/main/')
     },
@@ -30,9 +31,20 @@ const oauth = new OAuth2Server({
             grants: ['password']
         }
     },
-    getUser(username, password) {
-        return {
-            username: 'test username'
+    async getUser(username, password) {
+        let user = await User.findOne({
+            where: { username }
+        })
+        if (!user) {
+            return false
+        }
+        let match = await bcrypt.compare(password, user.password)
+        if (match) {
+            return {
+                username: user.username
+            }
+        } else {
+            return false
         }
     },
     saveToken(token, client, user) {
