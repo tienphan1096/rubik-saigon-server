@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const express = require('express');
 const router = express.Router();
 const sharp = require('sharp');
+const jwt = require('jsonwebtoken');
 const { Puzzle, PuzzleType, User } = require('../models')
 const { Op } = require('sequelize')
 const fs = require('fs');
@@ -17,12 +18,25 @@ const storage = multer.diskStorage({
 })
 var upload = multer({ storage })
 
-const tokens = []
 const OAuth2Server = require('oauth2-server');
 const Request = OAuth2Server.Request;
 const Response = OAuth2Server.Response;
 const oauth = new OAuth2Server({
   model: {
+    generateAccessToken(client, user) {
+        return jwt.sign({user: user.username}, process.env.JWT_SECRET, { expiresIn: '10h' })
+    },
+    getAccessToken(accessToken) {
+        // if token expired, an error will be thrown here and propagated up.
+        let decoded = jwt.verify(accessToken, process.env.JWT_SECRET)
+        return {
+            token: accessToken,
+            accessTokenExpiresAt: new Date(decoded.exp * 1000),
+            user: {
+                username: decoded.username
+            }
+        }
+    },
     getClient(clientId, clientSecret) {
         if (clientId === process.env.APP_CLIENT_ID && clientSecret === process.env.APP_CLIENT_SECRET)
         return {
@@ -54,7 +68,6 @@ const oauth = new OAuth2Server({
         token.client = {
             id: client.id
         }
-        tokens.push(token)
         return token
     },
   }
@@ -63,12 +76,12 @@ const oauth = new OAuth2Server({
 router.post('/login', (req, res, next) => {
     var request = new Request(req)
     var response = new Response(res)
-    return oauth.token(request, response)
-    .then(function(token) {
-        res.json(token);
-    }).catch(function(err) {
-        res.status(err.code || 500).json(err);
-    });
+    oauth.token(request, response)
+        .then(function(token) {
+            res.json(token);
+        }).catch(function(err) {
+            res.status(err.code || 500).json(err);
+        });
 })
 
 router.get('/scan', function(req, res, next) {
@@ -89,24 +102,37 @@ router.get('/puzzles', (req, res, next) => {
     })
 })
 
-router.post('/puzzle', upload.single('image'), async function(req, res, next) {
-    if (req.file && req.file.originalname) {
-        generateThumbnail(req.file.originalname)
-    }
-    Puzzle.create({
-        name: req.body.name,
-        price: req.body.price,
-        type: req.body.type,
-        image: req.file ? req.file.originalname : null,
-        url: await getUniqueUrlFromText(req.body.name)
-    }).then(result => {
-        res.json(result)
-    }).catch(err => {
-        res.json({
-            err: 'Error adding new item.'
+router.post('/puzzle',
+    (req, res, next) => {
+        var request = new Request(req)
+        var response = new Response(res)
+        oauth.authenticate(request, response)
+            .then(token => {
+                next()
+            })
+            .catch(err => {
+                res.status(err.code || 500).json(err)
+            })
+    },
+    upload.single('image'), async function(req, res, next) {
+        if (req.file && req.file.originalname) {
+            generateThumbnail(req.file.originalname)
+        }
+        Puzzle.create({
+            name: req.body.name,
+            price: req.body.price,
+            type: req.body.type,
+            image: req.file ? req.file.originalname : null,
+            url: await getUniqueUrlFromText(req.body.name)
+        }).then(result => {
+            res.json(result)
+        }).catch(err => {
+            console.log(err)
+            res.json({
+                err: 'Error adding new item.'
+            })
         })
     })
-})
 
 router.get('/puzzle-types', function(req, res, next) {
     PuzzleType.findAll().then(results => res.json(results))
