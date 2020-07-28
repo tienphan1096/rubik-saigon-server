@@ -120,11 +120,21 @@ router.get('/search', (req, res, next) => {
 })
 
 router.get('/puzzles', (req, res, next) => {
-    Puzzle.findAll().then(results => {
+    Puzzle.findAll({ limit: 12 }).then(results => {
         results.forEach(puzzle => {
             puzzle.setDataValue('thumbnail', `/images/thumbnails/${puzzle.image}`)
         })
         res.json(results)
+    })
+})
+
+router.get('/puzzle', (req, res, next) => {
+    Puzzle.findOne({
+        where: { url: req.query.url },
+        include: PuzzleType
+    }).then(result => {
+        result.setDataValue('imgsrc', `/images/main/${result.image}`)
+        res.json(result)
     })
 })
 
@@ -146,7 +156,7 @@ router.post('/puzzle',
         }
         Puzzle.create({
             name: req.body.name,
-            price: req.body.price,
+            price: req.body.price ? req.body.price : null,
             type: req.body.type,
             image: req.file ? req.file.originalname : null,
             url: await getUniqueUrlFromText(req.body.name)
