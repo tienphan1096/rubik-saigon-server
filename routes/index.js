@@ -93,6 +93,32 @@ router.get('/scan', function(req, res, next) {
         })
 });
 
+router.get('/search', (req, res, next) => {
+    let keywords = req.query.keywords.split(' ')
+    let conditions = {
+        [Op.and]: []
+    }
+    keywords.forEach(keyword => {
+        conditions[Op.and].push({
+            [Op.or]: [
+                {
+                    name: {
+                        [Op.like]: `%${keyword}%`
+                    }
+                },
+                {
+                    url: {
+                        [Op.like]: `%${keyword}%`
+                    }
+                }
+            ]
+        })
+    })
+    Puzzle.findAll({where: conditions}).then(results => {
+        res.json(results)
+    })
+})
+
 router.get('/puzzles', (req, res, next) => {
     Puzzle.findAll().then(results => {
         results.forEach(puzzle => {
