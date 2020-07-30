@@ -115,12 +115,23 @@ router.get('/search', (req, res, next) => {
         })
     })
     Puzzle.findAll({where: conditions}).then(results => {
+        results.forEach(puzzle => {
+            puzzle.setDataValue('thumbnail', `/images/thumbnails/${puzzle.image}`)
+        })
         res.json(results)
     })
 })
 
 router.get('/puzzles', (req, res, next) => {
-    Puzzle.findAll({ limit: 12 }).then(results => {
+    const options = { order: [['id', 'DESC']] };
+    if (req.query.category) {
+        options.where = {
+            type: req.query.category
+        }
+    } else {
+        options.limit = 9
+    }
+    Puzzle.findAll(options).then(results => {
         results.forEach(puzzle => {
             puzzle.setDataValue('thumbnail', `/images/thumbnails/${puzzle.image}`)
         })
